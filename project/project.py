@@ -25,11 +25,6 @@ match = ""
 matchnum = ""
 #print(match)
 
-
-def styling():
-    style = "<style>"
-    style += "</style>"
-
 def buildTop(data):
     #Created the title header of html
     top = ""
@@ -52,23 +47,29 @@ def buildBody(data):
     bodycontent += "<div style=\"background-color: #574f48;\" class=\"tab-content\">"
     bodycontent += "<div id=\"general\" class=\"tab-pane fade in active\"><h4 style=\"color:#888888\">General</h4>"
     bodycontent += "<h5 style=\"color:#888888\"> Match Name: "
+    #Sets the game name
     bodycontent += unicode(data['lobby_name'])
     bodycontent += "</h5>"
     bodycontent += "<h5 style=\"color:#888888\"> Match ID: "
+    #Sets the match id
     bodycontent += unicode(data['match_id'])
     bodycontent += "</h5>"
     bodycontent += "<h5 style=\"color:#888888\"> Start Time: "
     timefloat = float(data['start_time'])
+    #Sets the start time
     bodycontent += time.strftime("%H:%M:%S", time.gmtime(timefloat))
     bodycontent += "</h5>"
     bodycontent += "<h5 style=\"color:#888888\"> End Time: "
+    #Sets the end time
     endtime = data['duration'] + timefloat
     bodycontent += time.strftime("%H:%M:%S", time.gmtime(endtime))
     bodycontent += "</h5>"
+    #Gets the total number of players
     bodycontent += "<h5 style=\"color:#888888\"> Number Of Players: "
     bodycontent += unicode(len(players))
     bodycontent += "</h5 style=\"color:#888888\">"
     bodycontent += "<h5 style=\"color:#888888\"> Duration: "
+    #The length of duration
     bodycontent += unicode(data['duration'] / 60)
     bodycontent += " Mins</h5>"
     bodycontent += "</div>"
@@ -78,8 +79,9 @@ def buildBody(data):
     bodycontent += "<thead><tr><th>Account's</th></tr></thead>"
     bodycontent += "<tbody>"
     for player in players:
+        #Gets the hero id
         herokid = unicode(player.get('hero_id'))
-
+        #Checks the game mode
         if mode == "Captains Draft":
             team = 0
             for pick in data['picks_bans']:
@@ -94,20 +96,26 @@ def buildBody(data):
         else:
             bodycontent += "<tr>"
 
-
+        #Sets the players ba
         bodycontent += "<td>"
         bodycontent += "<div class=\"panel-group\"><div class=\"panel panel-default\"><div class=\"panel-heading\"><h4 class=\"panel-title\"><a data-toggle=\"collapse\" href=\"#collapse"
+        #Sets panel id
         bodycontent += unicode(player.get('account_id'))
         bodycontent += "\">"
+        #Display player name
         bodycontent += unicode(player.get('account_id'))
         bodycontent += " - "
         bodycontent += unicode(player.get('hero_name'))
+        #Displays players kills
         bodycontent += " Kills: "
         bodycontent += unicode(player.get('kills'))
+        #Displays the players dealths
         bodycontent += " Dealths: "
         bodycontent += unicode(player.get('deaths'))
+        #Displays the players assists
         bodycontent += " Assists: "
         bodycontent += unicode(player.get('assists'))
+        #Sets links to dotabuff
         bodycontent += "</a></h4></div><div id=\"collapse"
         bodycontent += unicode(player.get('account_id'))
         bodycontent += "\" class=\"panel-collapse collapse\"><ul class=\"list-group\">"
@@ -115,16 +123,20 @@ def buildBody(data):
         bodycontent += unicode(player.get('account_id'))
         bodycontent += "\">View Player Profile: https://www.dotabuff.com/players/"
         bodycontent += unicode(player.get('account_id'))
+        #Sets the gold/min
         bodycontent += "</a></li>"
         bodycontent += "<li class=\"list-group-item\"><b>Gold/Min:</b> "
         bodycontent += unicode(player.get('gold_per_min'))
         bodycontent += "</li>"
+        #Sets the xp/min
         bodycontent += "<li class=\"list-group-item\"><b>XP/Min:</b> "
         bodycontent += unicode(player.get('xp_per_min'))
         bodycontent += "</li>"
+        #Sets the players denies
         bodycontent += "<li class=\"list-group-item\"><b>Denies:</b> "
         bodycontent += unicode(player.get('denies'))
         bodycontent += "</li>"
+        #Sets the last hits
         bodycontent += "<li class=\"list-group-item\"><b>Last Hits:</b> "
         bodycontent += unicode(player.get('last_hits'))
         bodycontent += "</li>"
@@ -139,6 +151,7 @@ def buildBody(data):
     bodycontent += "<div class=\"row\">"
     bodycontent += "<div class=\"col-sm-6\">"
 
+    #Checks for the winning team, render the radiant col-sm-6
     if (data.get('radiant_win')):
         bodycontent += "<h2 style=\"color:#88968b\">Radiant (Winner)</h2>"
     else:
@@ -147,6 +160,7 @@ def buildBody(data):
     bodycontent += "</div>"
     bodycontent += "<div class=\"col-sm-6\">"
 
+    #Checks for the winning team, render the dire col-sm-6
     if (data.get('radiant_win')):
         bodycontent += "<h2 style=\"color:#a89c9c\">Dire</h2>"
     else:
@@ -155,6 +169,7 @@ def buildBody(data):
     bodycontent += "</div>"
     bodycontent += "</div>"
 
+    # If Pro Match finds the total score via parsing
     if mode == "Captains Draft":
         dire = ["dire"]
         radiant = ["radiant"]
@@ -200,7 +215,45 @@ def buildBody(data):
         bodycontent += "</h4>"
 
     else:
-        print ""
+        dire = ["dire"]
+        radiant = ["radiant"]
+        bans = ["bans"]
+        #these lists are used to store the gpm per player_id based on side(radiant/dire)
+        dire_gpm = []
+        radiant_gpm = []
+        #variables to store total team worth
+        dire_gold = 0
+        radiant_gold = 0
+        #list of values for dire and radiant player slots
+        dire_slots  = [128,129,130,131,132,133,134,135]
+        radiant_slots = [0,1,2,3,4,5,6,7]
+
+        for toon in data['players']:
+            if ((int(toon.get('player_slot'))) in dire_slots):
+                dire.append(unicode(toon.get('hero_id')))
+            elif ((int(toon.get('player_slot'))) in radiant_slots):
+                radiant.append(unicode(toon.get('hero_id')))
+            else:
+                bans.append(unicode(toon.get('hero_id')))
+
+        for cash in data['players']:
+            if ((unicode(cash.get('hero_id'))) in dire):
+                dire_gpm.append(cash.get('gold_per_min'))
+
+            elif ((unicode(cash.get('hero_id'))) in radiant):
+                radiant_gpm.append(cash.get('gold_per_min'))
+        for player_gpm_dire in dire_gpm:
+            dire_gold += player_gpm_dire * (float(data['duration']) / 60)
+        #radiant team gold
+        for player_gpm_rad in radiant_gpm:
+            radiant_gold += player_gpm_rad * (float(data['duration']) / 60)
+
+        bodycontent += "<h4 style=\"color:#888888\">Dire Gold: "
+        bodycontent += '{0:.5g}'.format(dire_gold)
+        bodycontent += "</h4>"
+        bodycontent += "<h4 style=\"color:#888888\">Radiant Gold: "
+        bodycontent += '{0:.5g}'.format(radiant_gold)
+        bodycontent += "</h4>"
 
 
     bodycontent += "</div>"
@@ -227,8 +280,7 @@ def htmlFull(mdata):
     html += "<section>"
     html += "<div class=\"container\">"
     # Buildings Markup from Match Data.
-
-
+    # Build the bootstrap model
     html += "<div id=\"modal\" class=\"modal show\" style=\"position: absolute;\" tabindex=\"-1\" role=\"dialog\" aria-hidden=\"true\"><div class=\"modal-dialog\"><div style=\"background-color: #3e3f40;\" class=\"modal-content\"><div class=\"modal-body\">"
     html += "<br>"
     html += "<div class=\"row\">"
