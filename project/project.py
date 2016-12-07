@@ -78,6 +78,25 @@ def buildBody(data):
     #bodycontent += "<thead><tr><th>Account's ID</th><th>Deaths</th><th>Kills</th></tr></thead>"
     bodycontent += "<thead><tr><th>Account's</th></tr></thead>"
     bodycontent += "<tbody>"
+
+    pdire = ["dire"]
+    pradiant = ["radiant"]
+    pbans = ["bans"]
+
+    gdire_slots  = [128,129,130,131,132,133,134,135]
+    gradiant_slots = [0,1,2,3,4,5,6,7]
+
+
+    if mode != "Captains Draft":
+        for pcheck in players:
+            if ((int(pcheck.get('player_slot'))) in gdire_slots):
+                pdire.append(unicode(pcheck.get('hero_id')))
+            elif ((int(pcheck.get('player_slot'))) in gradiant_slots):
+                pradiant.append(unicode(pcheck.get('hero_id')))
+            else:
+                pbans.append(unicode(pcheck.get('hero_id')))
+
+
     for player in players:
         #Gets the hero id
         herokid = unicode(player.get('hero_id'))
@@ -94,7 +113,12 @@ def buildBody(data):
             if (team == 1):
                 bodycontent += "<tr style=\"background-color:#513a3a\">"
         else:
-            bodycontent += "<tr>"
+            herokid = unicode(player.get('hero_id'))
+            if herokid in pdire:
+                bodycontent += "<tr style=\"background-color:#513a3a\">"
+            else:
+                bodycontent += "<tr style=\"background-color:#3a513e\">"
+
 
         #Sets the players ba
         bodycontent += "<td>"
