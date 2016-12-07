@@ -39,13 +39,15 @@ def buildTop(data):
     return top
 
 def buildBody(data):
+    #print data
     bodycontent = ""
+    mode =  unicode(data['game_mode_name'])
     #Gets all the players of the match
     players = data['players']
     bodycontent += "<ul style=\"background-color: #574f48;\" class=\"nav nav-tabs\">"
     bodycontent += "<li style=\"background-color: #3e3f40;\" class=\"active\"><a data-toggle=\"tab\" href=\"#general\">General</a></li>"
     bodycontent += "<li style=\"background-color: #3e3f40;\" ><a data-toggle=\"tab\" href=\"#players\">Players</a></li>"
-    bodycontent += "<li style=\"background-color: #3e3f40;\" ><a data-toggle=\"tab\" href=\"#stats\">Statistics</a></li>"
+    bodycontent += "<li style=\"background-color: #3e3f40;\" ><a data-toggle=\"tab\" href=\"#stats\">Results</a></li>"
     bodycontent += "</ul>"
     bodycontent += "<div style=\"background-color: #574f48;\" class=\"tab-content\">"
     bodycontent += "<div id=\"general\" class=\"tab-pane fade in active\"><h4 style=\"color:#888888\">General</h4>"
@@ -78,16 +80,21 @@ def buildBody(data):
     for player in players:
         herokid = unicode(player.get('hero_id'))
 
-        team = 0
-        for pick in data['picks_bans']:
-            if (unicode(pick.get('hero_id')) == herokid):
-                team = pick.get('team')
+        if mode == "Captains Draft":
+            team = 0
+            for pick in data['picks_bans']:
+                if (unicode(pick.get('hero_id')) == herokid):
+                    team = pick.get('team')
 
-        if (team == 0):
-            bodycontent += "<tr style=\"background-color:#3a513e\">"
+            if (team == 0):
+                bodycontent += "<tr style=\"background-color:#3a513e\">"
 
-        if (team == 1):
-            bodycontent += "<tr style=\"background-color:#513a3a\">"
+            if (team == 1):
+                bodycontent += "<tr style=\"background-color:#513a3a\">"
+        else:
+            bodycontent += "<tr>"
+
+
         bodycontent += "<td>"
         bodycontent += "<div class=\"panel-group\"><div class=\"panel panel-default\"><div class=\"panel-heading\"><h4 class=\"panel-title\"><a data-toggle=\"collapse\" href=\"#collapse"
         bodycontent += unicode(player.get('account_id'))
@@ -122,27 +129,80 @@ def buildBody(data):
         bodycontent += unicode(player.get('last_hits'))
         bodycontent += "</li>"
         bodycontent += " </ul></div></div></div>"
-        #bodycontent += "<h5 style=\"color:#888888\"><a href=\"https://www.dotabuff.com/players/"
-        #bodycontent += unicode(player.get('account_id'))
-        #bodycontent += "\">"
-        #bodycontent += unicode(player.get('account_id'))
-        #bodycontent += "</a></h5></td>"
-        #bodycontent += "<td>"
-        #bodycontent += "<h5 style=\"color:#888888\">"
-        #bodycontent += unicode(player.get('deaths'))
-        #bodycontent += "</h5>"
-        #bodycontent += "</td>"
-        #bodycontent += "<td>"
-        #bodycontent += "<h5 style=\"color:#888888\">"
-        #bodycontent += unicode(player.get('kills'))
-        #bodycontent += "</h5>"
         bodycontent += "</td>"
         bodycontent += "</tr>"
         # item_0_name
     bodycontent += "</tbody>"
     bodycontent += "</table>"
     bodycontent += "</div>"
-    bodycontent += "<div id=\"stats\" class=\"tab-pane fade in \"><h4 style=\"color:#888888\">Statistics</h4>"
+    bodycontent += "<div id=\"stats\" class=\"tab-pane fade in \"><h4 style=\"color:#888888\">Results</h4>"
+    bodycontent += "<div class=\"row\">"
+    bodycontent += "<div class=\"col-sm-6\">"
+
+    if (data.get('radiant_win')):
+        bodycontent += "<h2 style=\"color:#88968b\">Radiant (Winner)</h2>"
+    else:
+        bodycontent += "<h2 style=\"color:#88968b\">Radiant</h2>"
+
+    bodycontent += "</div>"
+    bodycontent += "<div class=\"col-sm-6\">"
+
+    if (data.get('radiant_win')):
+        bodycontent += "<h2 style=\"color:#a89c9c\">Dire</h2>"
+    else:
+        bodycontent += "<h2 style=\"color:#a89c9c\">Dire (Winner)</h2>"
+
+    bodycontent += "</div>"
+    bodycontent += "</div>"
+
+    if mode == "Captains Draft":
+        dire = ["dire"]
+        radiant = ["radiant"]
+        bans = ["bans"]
+        #these lists are used to store the gpm per player_id based on side(radiant/dire)
+        dire_gpm = []
+        radiant_gpm = []
+        #variables to store total team worth
+        dire_gold = 0
+        radiant_gold = 0
+        # loop bellow checks is the hero was piccked and if so which team they are, then adds them to the
+        # corresponding list
+        for hero in data['picks_bans']:
+            if (bool(hero.get('is_pick')) == True and bool(hero.get('team')) == 1):
+                radiant.append(unicode(hero.get('hero_id')))
+            elif (bool(hero.get('is_pick')) == True and bool(hero.get('team')) == 0):
+                dire.append(unicode(hero.get('hero_id')))
+            else:
+                bans.append(unicode(hero.get('hero_id')))
+        # loop below gets each players gpm in the dire and radiant list and stores them in dire_gpm and
+        # radiant gpm
+        for money in data['players']:
+            if ((unicode(money.get('hero_id'))) in dire):
+                dire_gpm.append(money.get('gold_per_min'))
+
+            elif ((unicode(money.get('hero_id'))) in radiant):
+                radiant_gpm.append(money.get('gold_per_min'))
+
+        # loop below goes through each gpm, multiplies it by the duration of the match and adds it to the
+        # variable for dire team gold or radiant team gold
+        #dire team gold
+        for player_gpm_dire in dire_gpm:
+            dire_gold += player_gpm_dire * (float(data['duration']) / 60)
+        #radiant team gold
+        for player_gpm_rad in radiant_gpm:
+            radiant_gold += player_gpm_rad * (float(data['duration']) / 60)
+
+        bodycontent += "<h4 style=\"color:#888888\">Dire Gold: "
+        bodycontent += '{0:.5g}'.format(dire_gold)
+        bodycontent += "</h4>"
+        bodycontent += "<h4 style=\"color:#888888\">Radiant Gold: "
+        bodycontent += '{0:.5g}'.format(radiant_gold)
+        bodycontent += "</h4>"
+
+    else:
+        print ""
+
+
     bodycontent += "</div>"
     bodycontent += "</div>"
     return bodycontent
@@ -156,16 +216,19 @@ def htmlFull(mdata):
     html += "<!DOCTYPE html><html>"
     # Adding links and configuring header
     html += "<head>"
+    html += "<style>.graph{width:100%;height:100%;border:1pxsolid#aeaeae;background-color:#eaeaea;}.bar{width:8px;margin:1px;display:inline-block;position:relative;background-color:#121212;vertical-align:baseline;}</style>"
     html += "<title>DOTA Match Stats</title>"
     html += "<link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css\">"
     html += "<style>"
     html += ".nav-tabs>li>a { background-color: #333333; border-color: #3e3f40; color:#fff;}/* active tab color */.nav-tabs>li.active>a, .nav-tabs>li.active>a:hover, .nav-tabs>li.active>a:focus { color: #fff; background-color: #666; border: 1px solid #888888;}/* hover tab color */.nav-tabs>li>a:hover { border-color: #FFFFFF; background-color: #111111;}"
     html += "</style>"
     html += "</head>"
-    html += "<body style=\" width: 100%; height: 100%; background-image:url('https://hydra-media.cursecdn.com/dota2.gamepedia.com/3/30/Fall_2016_Battle_Pass_Loading_Screen_III_16x9.png');\">"
+    html += "<body style=\" width: 100%; height: 100%;  -webkit-background-size: cover; -moz-background-size: cover;  -o-background-size: cover; background-size: cover; background-image:url('https://hydra-media.cursecdn.com/dota2.gamepedia.com/3/30/Fall_2016_Battle_Pass_Loading_Screen_III_16x9.png');\">"
     html += "<section>"
     html += "<div class=\"container\">"
     # Buildings Markup from Match Data.
+
+
     html += "<div id=\"modal\" class=\"modal show\" style=\"position: absolute;\" tabindex=\"-1\" role=\"dialog\" aria-hidden=\"true\"><div class=\"modal-dialog\"><div style=\"background-color: #3e3f40;\" class=\"modal-content\"><div class=\"modal-body\">"
     html += "<br>"
     html += "<div class=\"row\">"
@@ -173,7 +236,7 @@ def htmlFull(mdata):
     html += "<br><form method=\"post\"><div class=\"form-group\"><input type=\"text\" placeholder=\"Match ID\" class=\"form-control\" name=\"match\"></div><div class=\"form-group\"><button type=\"submit\" class=\"btn btn-danger\">Load</button></div></form>"
     html += "</div>"
     html += "</div>"
-    # Closing the webpage
+    # Closing the webpageno-repeat center center fixed;
     if mdata != "":
         html += "<div class=\"row\">"
         html += "<div class=\"col-sm-12\" style=\"background-color: #574f48;\">"
